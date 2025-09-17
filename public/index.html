@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VPS Stats</title>
+<style>
+body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
+.card { border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); max-width: 720px; }
+.row { display:flex; gap:12px; }
+</style>
+</head>
+<body>
+<h1>VPS Stats</h1>
+<div id="root" class="card">Carregando...</div>
+
+
+<script>
+async function load() {
+try {
+const res = await fetch('/api/stats');
+const data = await res.json();
+
+
+document.getElementById('root').innerHTML = `
+<h2>${data.hostname} — ${data.distro}</h2>
+<div><strong>Kernel:</strong> ${data.kernel}</div>
+<div><strong>Uptime:</strong> ${data.uptime_pretty} (${data.uptime_seconds}s)</div>
+<div><strong>CPU:</strong> ${data.cpu.manufacturer} ${data.cpu.brand} (${data.cpu.cores} cores @ ${data.cpu.speed}GHz)</div>
+<div><strong>Load:</strong> ${data.load.toFixed(2)}%</div>
+<div><strong>RAM:</strong> ${prettyBytes(data.ram.used)} / ${prettyBytes(data.ram.total)}</div>
+<div><strong>Disk (${data.disk ? data.disk.mount : 'N/A'}):</strong> ${data.disk ? (prettyBytes(data.disk.used) + ' / ' + prettyBytes(data.disk.size) + ` (${data.disk.use}%)`) : 'N/A'}</div>
+<div><strong>Packages (approx):</strong> ${data.packages ?? 'n/a'}</div>
+<div style="margin-top:12px; font-size:12px; color:#666">Atualizado: ${new Date(data.timestamp).toLocaleString()}</div>
+`;
+} catch (e) {
+document.getElementById('root').innerText = 'Erro ao carregar estatísticas.';
+console.error(e);
+}
+}
+
+
+function prettyBytes(n) {
+if (!n && n !== 0) return 'n/a';
+const units = ['B','KB','MB','GB','TB'];
+let i = 0;
+let v = Number(n);
+while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
+return `${v.toFixed(2)} ${units[i]}`;
+}
+
+
+load();
+setInterval(load, 10_000); // atualiza a cada 10s
+</script>
+</body>
+</html>
